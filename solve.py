@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+@author: Jochen Hinz
+"""
+
 from util import np
 from scipy import sparse
 from scipy.sparse import linalg
@@ -119,6 +126,8 @@ def solve_with_dirichlet_data(A, rhs, freezeindices, data, **kwargs):
                     (n,) with n <= N.
     data: array-like containing the dirichlet data, i.e., the solution vector
           index freeze_indices[i] will be equal to data[i].
+          Can also be a scalar, in which case the scalar is repeated to match
+          the length of `freezeindices`.
           data.shape == (n,)
 
     **kwargs: forwarded to ``solve_sparse_linear``

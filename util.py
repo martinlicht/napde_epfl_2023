@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+@author: Jochen Hinz
+"""
+
 import numpy as np
 from functools import wraps
 

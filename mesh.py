@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+@author: Jochen Hinz
+"""
+
 from util import np, _, freeze
 import pygmsh
 import meshio
@@ -139,7 +146,7 @@ class Triangulation:
     """ Return the sorted indices of all vertices that lie on the boundary. """
     return np.sort(np.unique(self.lines.ravel()))
 
-  def tripcolor(self, z, title=None):
+  def tripcolor(self, z, title=None, show=True):
     """ Plot discrete data ``z`` on the vertices of the mesh.
         Data is linearly interpolated between the vertices. """
     fig, ax = plt.subplots()
@@ -149,7 +156,8 @@ class Triangulation:
     fig.colorbar(tpc)
     if title is not None:
       ax.set_title(title)
-    plt.show()
+    if show: plt.show()
+    return fig, ax
 
 
 def mesh_from_polygon(points: np.ndarray, mesh_size=0.05) -> Triangulation:

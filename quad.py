@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+@author: Jochen Hinz
+"""
+
 from util import np, _, frozen
 
 

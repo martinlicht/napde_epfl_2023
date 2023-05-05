@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+@author: Jochen Hinz
+"""
+
 from util import np, _
 from quad import QuadRule
 from mesh import Triangulation
@@ -309,16 +316,38 @@ def poisson_rhs_iter(mesh: Triangulation, quadrule: QuadRule, f: Callable) -> It
 
 def shape1D_LFE(quadrule: QuadRule) -> np.ndarray:
 
-  # XXX: docstring
-
   assert quadrule.simplex_type == 'line'
   x = quadrule.points.ravel()
   return np.stack([1-x, x], axis=1)
 
 
 def assemble_neumann_rhs(mesh: Triangulation, quadrule: QuadRule, g: Callable, selecter: Callable) -> np.ndarray:
+  """
+    Assemble the right-hand-side vector corresponding to the weak imposition
+    of Neumann data, i.e.
+    \int_{\Gamma_N} phi_i g d \gamma
 
-  # XXX: docstring
+    Parameters
+    ----------
+
+    mesh : :class:`Triangulation`
+      An instantiation of the `Triangulation` class, representing the mesh.
+    quadrule : :class: `QuadRule`
+      Instantiation of the `QuadRule` class with fields quadrule.points and
+      quadrule.weights. quadrule.simplex_type must be 'line'.
+    g : :class: `Callable`
+      Function representing `g(x)` in the integral.
+      Must take as input a vector of shape (nquadpoints, 2) and return either
+      a vector of shape (nquadpoints,) or (1,).
+      The latter means g is constant.
+    selecter: :class: `Callable`
+      Of the form selecter = selecter(a, b)
+      Given point a and b of the i-th boundary edge of the triangulation,
+      must either return `True` or `False`.
+      If True, this means that the edge lies on the Neumann boundary \Gamma_N
+      and therefore contributes to the right-hand-side.
+      If False, this means the edge is not on \Gamma_N and therefore skipped.
+  """
 
   ndofs = len(mesh.points)
   rhs = np.zeros((ndofs,), dtype=float)

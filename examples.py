@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+@author: Jochen Hinz
+"""
+
 from util import np
 from quad import QuadRule, seven_point_gauss_6, univariate_gauss
 from integrate import stiffness_with_diffusivity_iter, assemble_matrix_from_iterables, \
