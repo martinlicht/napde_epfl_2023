@@ -163,18 +163,43 @@ def solve_with_dirichlet_data(A, rhs, freezeindices, data, **kwargs):
   N = len(rhs)
   assert A.shape == (N, N)
 
+  # convert the full rhs vector (i.e., the one that is tested against ALL test functions)
+  # to an np.ndarray if not already.
   rhs = np.asarray(rhs)
+  
+  # create a vector that contains the Dirichlet data on the entries that are frozen
+  # from the Dirichlet boundary condition and NaN else.
   cons = NanVec.from_indices_data(N, freezeindices, data)
+  
+  # cons.where gives True where cons is not None and False else
+  # ~cons.where gives the opposite, i.e., False where cons is not None and True else
+  # the indices that are degrees of freedom in the linear problem subject to
+  # Dirichlet data are hence given by dofindices = ~cons.where
   dofindices = ~cons.where
 
+  # this step corresponds to the step f -> f_0 - B u_D in the document
+  # given cons = [5, 6, nan, 7, nan, nan, ...], cons|0 gives
+  # cons|0 = [5, 6, 0, 7, 0, 0, ...] so that A @ (cons|0) represents
+  # [B, D]^T u_D in the terminology of the document.
+  # Now we subtract rhs - A @ (cons|0) which represents
+  # f - [B, D]^T u_D and restricting to (...)[dofindices] is equivalent to
+  # taking the subset ([f_0, f_D]^T - [B, D]^T u_D)[slice] = f_0 - B u_D
   rhs = (rhs - A @ (cons|0))[dofindices]
 
   # convert to lil-format to enable slicing
+  # this step restricts A to what corresponds to \tilde{A} in the document.
+  # This is done by restricting the rows and columns to only the dofindices
   A = A.tolil()[dofindices][:, dofindices].tocsr()
+  
+  # solve for u_0
   sol = solve_sparse_linear(A, rhs, **kwargs)
 
+  # cons is equal to the imposed Dirichlet data on the freezeindices
+  # setting cons[dofindices] = sol will create a vector that is equal to
+  # the Dirichlet data on the freezeindices and to u_0 on the dofindices.
   cons[dofindices] = sol
 
+  # return the result as an ordinary np.ndarray
   return cons.view(np.ndarray)
 
 

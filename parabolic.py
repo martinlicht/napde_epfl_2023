@@ -54,10 +54,12 @@ def thetamethod(M: sparse.spmatrix,
     subject to spatial BCs and an initial condition u(0) = u^0,
     using the thetamethod.
 
-    Here, F(., ., .) is linear in all its arguments and can hence be
-    represented by a linear operator `A` over a finite-dimensional FEM basis.
+    Here, F(., ., .) is linear in all its arguments and
+    can hence be represented by a linear operator `A` over a
+    finite-dimensional FEM basis.
 
-    With 0 <= theta <= 1, the spatial and temporal discretisation can be cast into the form
+    With 0 <= theta <= 1, the spatial and temporal discretisation
+    can be cast into the form
 
     M (x^{n+1} - x^n) / dt^n = (1 - theta) * (A x^n + f^n) + theta * (A x^{n+1} + f^{n+1})
     (subject to initial and boundary conditions)
@@ -116,6 +118,7 @@ def thetamethod(M: sparse.spmatrix,
 
   # timestep is a scalar => convert to function that returns that scalar
   if np.isscalar(timestep):
+    assert timestep > 0
     _timestep = timestep
     timestep = lambda solutions: _timestep
 
@@ -196,7 +199,7 @@ def thetamethod(M: sparse.spmatrix,
     S = _S(dt)
 
     # create the right-hand-side vector
-    # rhs = M @ x^n + dt * (theta * (f^n + A @ x^n) + (1 - theta) * f^{n+1})
+    # rhs = M @ x^n + dt * ((1 - theta) * (f^n + A @ x^n) + theta * f^{n+1})
     rhs = M @ solutions[-1] + dt * ((1 - theta) * (fn + A @ solutions[-1]) + theta * fnp)
 
     # find x^{n+1} by solving Sx = rhs with the specified Dirichlet data
@@ -280,6 +283,7 @@ def make_video(mesh: Triangulation, solutions, time_instances=None, filename: st
   def init():
     return artist,
 
+  @lru_cache(maxsize=1)
   def animate(i):
     artist.set_array((solutions[i][mesh.triangles]).sum(1) / 3)
     label.set_text(r'$t^n = {:.3g}$'.format(time_instances[i]))
