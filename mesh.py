@@ -146,6 +146,24 @@ class Triangulation:
     """ Return the sorted indices of all vertices that lie on the boundary. """
     return np.sort(np.unique(self.lines.ravel()))
 
+  @cached_property
+  def element_neighbors(self):
+    """
+       Return a tuple of tuples `A` where A[i] contains the indices of elements that share at
+       least one vertex with the i-th element.
+    """
+    map_index_element = {}
+    for ielem, trindices in enumerate(self.triangles):
+      for index in trindices:
+        map_index_element.setdefault(index, []).append(ielem)
+
+    element_neighbors = [set() for _i in range(len(self.triangles))]
+    for index, values in map_index_element.items():
+      for i, val in enumerate(values):
+        element_neighbors[val].update(set(values[:i] + values[i+1:]))
+
+    return tuple(map(lambda x: tuple(sorted(x)), element_neighbors))
+
   def tripcolor(self, z, title=None, show=True):
     """ Plot discrete data ``z`` on the vertices of the mesh.
         Data is linearly interpolated between the vertices. """
@@ -172,13 +190,24 @@ def mesh_from_polygon(points: np.ndarray, mesh_size=0.05) -> Triangulation:
             The first point need not be repeated.
     mesh_size: Numeric value determining the density of cells.
                Smaller values => denser mesh.
+      Can alternatively be a function of the form
+        mesh_size = lambda dim, tag, x, y, z, _: target mesh size as function of x and y.
+      For instance, mesh_size = lambda ... : 0.1 - 0.05 * np.exp(-20 * ((x - .5)**2 + (y - .5)**2))
+      creates a denser mesh close to the point (x, y) = (.5, .5).
   """
+
+  if np.isscalar(mesh_size):
+    _mesh_size = mesh_size
+    mesh_size = lambda *args, **kwargs: _mesh_size
+
+  assert isinstance(type(mesh_size), Callable)
 
   points = np.asarray(points)
   assert points.shape[1:] == (2,)
 
   with pygmsh.geo.Geometry() as geom:
-    geom.add_polygon(points, mesh_size=mesh_size)
+    geom.add_polygon(points)
+    geom.set_mesh_size_callback(mesh_size)
     mesh = geom.generate_mesh(algorithm=5)
 
   return Triangulation(mesh)
