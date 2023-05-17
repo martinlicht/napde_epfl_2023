@@ -55,7 +55,7 @@ class Triangulation:
     """
     points = self.points
     slices = np.array([[0, 1], [1, 2], [2, 0]])
-    all_edges = list(set(map(abs_tuple, np.concatenate([self.triangles[:, sl] for sl in slices]))))
+    all_edges = list(set(map(abs_tuple, np.concatenate(self.triangles[:, slices]))))
     newpoints = points[np.array(all_edges)].sum(1) / 2
     map_edge_number = dict(zip(all_edges, count(len(points))))
 

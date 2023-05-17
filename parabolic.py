@@ -224,7 +224,7 @@ implicit_euler = partial(thetamethod, theta=1)
 crank_nicolson = partial(thetamethod, theta=.5)
 
 
-def make_video(mesh: Triangulation, solutions, time_instances=None, filename: str = 'animation.mp4'):
+def make_video(mesh: Triangulation, solutions, time_instances=None, filename: str = 'animation.mp4', dpi=400):
   """
     Create a video from a sequence of solution vectors that are compatible with `mesh`.
 
@@ -239,6 +239,8 @@ def make_video(mesh: Triangulation, solutions, time_instances=None, filename: st
       Optional. If not passed, defaults to np.arange(len(solutions)).
     filename : :class:`str`
       The filename under which the video is stored. Must end with `.mp4`.
+    dpi : :class:`float`
+      The quality of the video.
   """
   assert filename.endswith('.mp4')
   from matplotlib import animation
@@ -248,7 +250,7 @@ def make_video(mesh: Triangulation, solutions, time_instances=None, filename: st
   if time_instances is None:
     time_instances = np.arange(len(solutions))
 
-  interval = 4
+  interval = 2
 
   vmin = min(map(np.min, solutions))
   vmax = max(map(np.max, solutions))
@@ -264,6 +266,7 @@ def make_video(mesh: Triangulation, solutions, time_instances=None, filename: st
   ax = plt.axes(xlim=(xcenter - .6 * width, xcenter + .6 * width),
                 ylim=(ycenter - .6 * height, ycenter + .6 * height))
   ax.set_axis_off()
+  ax.set_aspect('equal')
 
   label = ax.text(xcenter - 0.2 * width,
                   ycenter + .6 * height,
@@ -275,7 +278,8 @@ def make_video(mesh: Triangulation, solutions, time_instances=None, filename: st
                                            vmin=vmin,
                                            vmax=vmax)
 
-  fig.colorbar(artist)
+  plt.colorbar(artist)
+
   artist.set_animated(True)
 
   progressbar = ProgressBar(prefix='Video creation', suffix='completed')
@@ -297,7 +301,7 @@ def make_video(mesh: Triangulation, solutions, time_instances=None, filename: st
                                  interval=interval,
                                  blit=True)
 
-  anim.save(filename, fps=30, extra_args=['-vcodec', 'libx264'])
+  anim.save(filename, fps=30, extra_args=['-vcodec', 'libx264'], dpi=dpi)
 
 
 if __name__ == '__main__':
