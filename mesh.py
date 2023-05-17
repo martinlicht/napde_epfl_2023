@@ -11,6 +11,7 @@ import meshio
 from matplotlib import pyplot as plt
 from matplotlib.tri import Triangulation as pltTriangulation
 from typing import Callable
+from scipy import sparse
 
 # A class' member function tagged as cached property
 # will remember whatever is returned the first time it's called.
@@ -19,9 +20,80 @@ from typing import Callable
 # that it cannot be changed from outside of the class.
 # If an array is returned, we can freeze that array for example (see below).
 from functools import cached_property
+from itertools import count
+
+
+def abs_tuple(tpl):
+  """
+    [5, 6] -> (5, 6)
+    [6, 5] -> (5, 6)
+    (6, 5) -> (5, 6)
+  """
+  a, b = tpl
+  if a > b: return b, a
+  return tuple(tpl)
 
 
 class Triangulation:
+
+  def _refine(self):
+    """
+      Uniformly refine the entire mesh once.
+            i1                             i1
+            / \                            / \
+           /   \                          /   \
+          /     \         becomes      i01 ---- i12
+         /       \                      / \   /  \
+        /         \                    /   \ /    \
+      i0 --------- i2                i0 -- i20 --- i2
+
+      Returns
+      -------
+      The refined mesh of class `Triangulation`
+      T: the linear operator that prolongs a vector of weights
+         w.r.t. the old basis to a vector of weights w.r.t. the refined basis.
+    """
+    points = self.points
+    slices = np.array([[0, 1], [1, 2], [2, 0]])
+    all_edges = list(set(map(abs_tuple, np.concatenate([self.triangles[:, sl] for sl in slices]))))
+    newpoints = points[np.array(all_edges)].sum(1) / 2
+    map_edge_number = dict(zip(all_edges, count(len(points))))
+
+    m = len(points)
+    n = m + len(map_edge_number)
+
+    # prolongation matrix
+    T = sparse.lil_matrix((n, m))
+
+    triangles = []
+    for tri in self.triangles:
+      i01, i12, i20 = [map_edge_number[edge] for edge in map(abs_tuple, tri[slices])]
+      i0, i1, i2 = tri
+      triangles.extend([
+          [i0, i01, i20],
+          [i01, i1, i12],
+          [i01, i12, i20],
+          [i20, i12, i2]
+      ])
+      T[tri, tri] = 1
+      T[[i01, i01, i12, i12, i20, i20], [i0, i1, i1, i2, i2, i0]] = .5
+
+    triangles = np.array(triangles, dtype=int)
+
+    lines = []
+    for line in lines:
+      i12 = map_edge_number[abs_tuple(line)]
+      i0, i1 = line
+      lines.extend([[i0, i12], [i12, i1]])
+
+    lines = np.array(lines, dtype=int)
+
+    points = np.concatenate([points, newpoints])
+
+    cells = {**self.mesh.cells_dict, **{'line': lines, 'triangle': triangles}}
+    mesh = self.mesh.__class__(points=np.concatenate([points, np.zeros(points.shape[:1] + (1,))], axis=1),
+                               cells=cells)
+    return self.__class__(mesh), T.tocsr()
 
   @staticmethod
   def from_polygon(*args, **kwargs):
@@ -45,6 +117,17 @@ class Triangulation:
                                 .format(simplex_names, tuple(mesh.cells_dict.keys())))
 
     self.mesh = mesh
+
+  def refine(self, n=1):
+    """
+      Refine the mesh `n` times and return the corresponding prolongation operator.
+    """
+    assert n >= 0
+    ret, T = self, sparse.eye(len(self.points))
+    for i in range(n):
+      ret, _T = ret._refine()
+      T = _T @ T
+    return ret, T.tocsr()
 
   @property
   @freeze
@@ -125,7 +208,7 @@ class Triangulation:
   @cached_property
   @freeze
   def detBK_boundary(self):
-    # XXX: docstring
+    """ Measure per boundary edge. """
     a, b = self.points[self.lines.T]
     return np.linalg.norm(b - a, ord=2, axis=1)
 
