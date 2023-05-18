@@ -273,7 +273,8 @@ def transport_matrix_with_stabilisation_iter(mesh: Triangulation, quadrule: Quad
     # goes in front of the stabilisation integral
     C = gamma * hK / binf
 
-    yield (weights[:, _, _] * (-grad_glob_in_beta[..., _] * shapeF[:, _] + C * grad_glob_in_beta[:, _] * grad_glob_in_beta[..., _])).sum(0) * detBK
+    # yield (weights[:, _, _] * (-grad_glob_in_beta[..., _] * shapeF[:, _] + C * grad_glob_in_beta[:, _] * grad_glob_in_beta[..., _])).sum(0) * detBK
+    yield (weights[:, _, _] * (grad_glob_in_beta[..., _, :] * shapeF[..., _] + C * grad_glob_in_beta[:, _] * grad_glob_in_beta[..., _])).sum(0) * detBK
 
 
 def poisson_rhs_iter(mesh: Triangulation, quadrule: QuadRule, f: Callable) -> Iterable:

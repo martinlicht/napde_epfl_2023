@@ -148,9 +148,9 @@ def thetamethod(M: sparse.spmatrix,
       data = lambda t: _data
   else:
     # no Dirichlet boundary => freezeindices is empty and data returns np.array([])
-    freezeindices = []
+    freezeindices = np.array([], dtype=int)
     assert data is None
-    data = lambda t: np.array([])
+    data = lambda t: np.array([], dtype=float)
 
   # create cached version of data array function
   # to remember data at t^n
