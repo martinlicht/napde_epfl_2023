@@ -81,7 +81,7 @@ class Triangulation:
     triangles = np.array(triangles, dtype=int)
 
     lines = []
-    for line in lines:
+    for line in self.lines:
       i12 = map_edge_number[abs_tuple(line)]
       i0, i1 = line
       lines.extend([[i0, i12], [i12, i1]])
